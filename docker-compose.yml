@@ -4,10 +4,22 @@ services:
     build: .
     ports:
       - "3000:3000"
-    volumes:
-      - todo-data:/data
     environment:
       - PORT=3000
-      - DB_FILE=/data/todos.db
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=todo
+      - PGPASSWORD=todo
+      - PGDATABASE=todo
+    depends_on:
+      - db
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: todo
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: todo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 volumes:
-  todo-data:
+  pgdata:

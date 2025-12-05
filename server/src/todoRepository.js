@@ -8,47 +8,36 @@ function mapRow(row) {
 }
 
 class TodoRepository {
-  constructor(db) {
-    this.db = db;
+  constructor(pool) {
+    this.pool = pool;
   }
 
-  getAll() {
-    return new Promise((resolve, reject) => {
-      this.db.all('SELECT * FROM todos ORDER BY created_at DESC', (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows.map(mapRow));
-      });
-    });
+  async getAll() {
+    const result = await this.pool.query(
+      'SELECT id, title, completed, created_at FROM todos ORDER BY created_at DESC'
+    );
+    return result.rows.map(mapRow);
   }
 
-  create(title) {
-    return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('INSERT INTO todos(title, completed) VALUES(?, 0)');
-      stmt.run(title, function (err) {
-        if (err) return reject(err);
-        resolve({ id: this.lastID });
-      });
-    });
+  async create(title) {
+    const result = await this.pool.query(
+      'INSERT INTO todos(title, completed) VALUES($1, FALSE) RETURNING id',
+      [title]
+    );
+    return { id: result.rows[0].id };
   }
 
-  update(id, { title, completed }) {
-    return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('UPDATE todos SET title = ?, completed = ? WHERE id = ?');
-      stmt.run(title, completed ? 1 : 0, id, function (err) {
-        if (err) return reject(err);
-        resolve({ changes: this.changes });
-      });
-    });
+  async update(id, { title, completed }) {
+    const result = await this.pool.query(
+      'UPDATE todos SET title = $1, completed = $2 WHERE id = $3',
+      [title, Boolean(completed), id]
+    );
+    return { changes: result.rowCount };
   }
 
-  delete(id) {
-    return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('DELETE FROM todos WHERE id = ?');
-      stmt.run(id, function (err) {
-        if (err) return reject(err);
-        resolve({ changes: this.changes });
-      });
-    });
+  async delete(id) {
+    const result = await this.pool.query('DELETE FROM todos WHERE id = $1', [id]);
+    return { changes: result.rowCount };
   }
 }
 

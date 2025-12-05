@@ -1,33 +1,30 @@
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 
-const defaultDbFile = process.env.DB_FILE || path.join(__dirname, '..', 'data', 'todos.db');
+const connectionConfig = {
+  host: process.env.PGHOST || 'db',
+  port: Number(process.env.PGPORT) || 5432,
+  user: process.env.PGUSER || 'todo',
+  password: process.env.PGPASSWORD || 'todo',
+  database: process.env.PGDATABASE || 'todo'
+};
 
-function ensureDatabaseDirectory(dbFile) {
-  const dir = path.dirname(dbFile);
-  if (!require('fs').existsSync(dir)) {
-    require('fs').mkdirSync(dir, { recursive: true });
-  }
+async function ensureSchema(pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      completed BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
 }
 
-function createConnection() {
-  ensureDatabaseDirectory(defaultDbFile);
-  const db = new sqlite3.Database(defaultDbFile);
-
-  db.serialize(() => {
-    db.run(
-      `CREATE TABLE IF NOT EXISTS todos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        completed INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );`
-    );
-  });
-
-  return db;
+async function createPool() {
+  const pool = new Pool(connectionConfig);
+  await ensureSchema(pool);
+  return pool;
 }
 
 module.exports = {
-  createConnection
+  createPool
 };
