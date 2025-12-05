@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  todo-app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - todo-data:/data
+    environment:
+      - PORT=3000
+      - DB_FILE=/data/todos.db
+volumes:
+  todo-data:
