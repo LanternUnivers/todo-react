@@ -19,5 +19,6 @@ ENV PGPORT=5432
 ENV PGUSER=todo
 ENV PGPASSWORD=todo
 ENV PGDATABASE=todo
+ENV DB_FILE=/data/todos.db
 EXPOSE 3000
 CMD ["node", "src/index.js"]
